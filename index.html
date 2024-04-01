@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Poker Blind Timer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      margin: 0;
+      padding: 0;
+      background-color: #1c1c1c;
+      color: #fff;
+    }
+    .left-section {
+      flex: 1;
+      padding: 40px;
+      background-color: #252525;
+    }
+    .right-section {
+      flex: 1;
+      padding: 40px;
+      text-align: center;
+      background-color: #1c1c1c;
+    }
+    h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+      color: #ffd700;
+    }
+    #timer {
+      font-size: 72px;
+      margin-bottom: 40px;
+      color: #ffd700;
+    }
+    #blind-level {
+      font-size: 48px;
+      margin-bottom: 40px;
+      color: #ffd700;
+    }
+    #blind-structure {
+      font-size: 24px;
+      line-height: 1.5;
+    }
+    #blind-structure table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 64px;
+    }
+    #blind-structure th,
+    #blind-structure td {
+      padding: 10px;
+      border: 1px solid #ffd700;
+      text-align: center;
+    }
+    button {
+      font-size: 24px;
+      padding: 15px 30px;
+      background-color: #ffd700;
+      color: #1c1c1c;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    #prize-pool {
+      font-size: 24px;
+      margin-top: 40px;
+      color: #ffd700;
+    }
+    #prize-pool h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    #prize-pool p {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    #prize-pool ul {
+      list-style: none;
+      padding: 0;
+    }
+    #prize-pool li {
+      font-size: 22px;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="left-section">
+    <h1>MCDM Poker Blind Timer</h1>
+    <div id="blind-level"></div>
+    <div id="timer">12:00</div>
+    <button id="start-stop">Start</button>
+    <button id="reset">Reset</button>
+    <div id="blind-structure">
+      <table>
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Small Blind</th>
+            <th>Big Blind</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="right-section">
+    <img src="mcdm.jpg" alt="Poker Image">
+    <div id="prize-pool"></div>
+  </div>
+
+  <script>
+    const timerDisplay = document.getElementById('timer');
+    const blindLevelDisplay = document.getElementById('blind-level');
+    const blindStructureDisplay = document.getElementById('blind-structure').querySelector('tbody');
+    const startStopButton = document.getElementById('start-stop');
+    const resetButton = document.getElementById('reset');
+    const prizePoolDisplay = document.getElementById('prize-pool');
+
+    let startTime;
+    let timerInterval;
+    let isRunning = false;
+    let blindLevelIndex = 0;
+    const blindLevels = [
+      { small: 500, big: 1000 },
+      { small: 1000, big: 2000 },
+      { small: 2000, big: 4000 },
+      { small: 4000, big: 8000 },
+      { small: 8000, big: 16000 },
+      { small: 10000, big: 20000 }
+    ];
+    const blindDuration = 12 * 60; // 12 minutes in seconds
+    const participants = [
+      { name: '¹éÁ¤Çö', prize: 56000 },
+      { name: 'ÁÖ¿µ¹Î', prize: 56000 },
+      { name: 'ÀÌ¼¼¹Î', prize: 14000 },
+      { name: 'À¯¿õ±Ô', prize: 14000 }
+    ];
+
+    function startTimer() {
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 1000);
+      isRunning = true;
+      startStopButton.textContent = 'Stop';
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      startStopButton.textContent = 'Start';
+    }
+
+    function resetTimer() {
+      stopTimer();
+      timerDisplay.textContent = '12:00';
+      blindLevelIndex = 0;
+      updateBlindLevel();
+    }
+
+    function updateTimer() {
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = blindDuration * 1000 - elapsedTime;
+
+      if (remainingTime <= 0) {
+        blindLevelIndex++;
+        if (blindLevelIndex >= blindLevels.length) {
+          resetTimer();
+          return;
+        }
+        startTime = Date.now();
+        updateBlindLevel();
+      }
+
+      const minutes = Math.floor(remainingTime / 60000);
+      const seconds = Math.floor((remainingTime % 60000) / 1000);
+      timerDisplay.textContent = `${padZero(minutes)}:${padZero(seconds)}`;
+    }
+
+    function updateBlindLevel() {
+      const { small, big } = blindLevels[blindLevelIndex];
+      blindLevelDisplay.textContent = `Current Blind Level: ${small}/${big}`;
+    }
+
+    function displayBlindStructure() {
+      const blindStructureRows = blindLevels
+        .map(({ small, big }, index) => `
+          <tr>
+            <td>Level ${index + 1}</td>
+            <td>${small}</td>
+            <td>${big}</td>
+          </tr>
+        `)
+        .join('');
+      blindStructureDisplay.innerHTML = blindStructureRows;
+    }
+
+    function displayPrizePool() {
+      const totalPrize = participants.reduce((sum, participant) => sum + participant.prize, 0);
+      const prizePoolText = `
+        <h2>´©Àû ¿ì½Â »ó±Ý</h2>
+        <p>ÃÑ »ó±Ý: $${totalPrize}</p>
+        <ul>
+          ${participants.map(participant => `<li>${participant.name}: $${participant.prize}</li>`).join('')}
+        </ul>
+      `;
+      prizePoolDisplay.innerHTML = prizePoolText;
+    }
+
+    function padZero(number) {
+      return number.toString().padStart(2, '0');
+    }
+
+    startStopButton.addEventListener('click', () => {
+      if (isRunning) {
+        stopTimer();
+      } else {
+        startTimer();
+      }
+    });
+
+    resetButton.addEventListener('click', resetTimer);
+
+    updateBlindLevel();
+    displayBlindStructure();
+    displayPrizePool();
+  </script>
+</body>
+</html>
